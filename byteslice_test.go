@@ -19,7 +19,7 @@ func ExampleByteSlice() {
 	var b ByteSlice
 	b.WriteByte(65)
 	b.WriteString("bc")
-	
+
 	fmt.Println(b)
 	fmt.Println(string(b))
 	// OUTPUT:

@@ -33,8 +33,7 @@ var (
 
 // NewPByteSlice returns a *ByteSlice.
 func NewPByteSlice(bytes []byte) *ByteSlice {
-	bs := ByteSlice(bytes)
-	return &bs
+	return (*ByteSlice)(&bytes)
 }
 
 // Read implements io.Reader interface.
