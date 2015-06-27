@@ -16,11 +16,16 @@ import (
 // io.ByteWriter, io.Closer, io.ReaderFrom, io.WriterTo and io.RuneReader
 // interfaces.
 //
-// When reading from a constant byte slice and no need for seeking, *ByteSlice is a
+// When reading from a constant small byte slice and no need for seeking, *ByteSlice is a
 // better alternative then bytes.Buffer, since it needs less extra resource.
+// Benchmark shows when reading from a slice of 10 bytes, the total performance is about 5
+// times bettern than bytes.Buffer (70 ns/op vs 400 ns/op). For a slice of 100 bytes,
+// there are still obvious improvement (700 ns/op vs 1000 ns/op). See and run benchmark for
+// more details.
 type ByteSlice []byte
 
 var (
+	// Make sure *ByteSlice implement the interfaces.
 	_ io.Reader     = (*ByteSlice)(nil)
 	_ io.Writer     = (*ByteSlice)(nil)
 	_ io.ByteReader = (*ByteSlice)(nil)

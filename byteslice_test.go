@@ -138,3 +138,51 @@ func TestByteSlice_WriteItoa(t *testing.T) {
 
 	assert.Equal(t, "s", string(s), "1234ff")
 }
+
+func BenchmarkByteSlice100(b *testing.B) {
+	var data [100]byte
+	for i := 0; i < b.N; i++ {
+		b := ByteSlice(data[:])
+		for {
+			if _, err := b.ReadByte(); err != nil {
+				break
+			}
+		}
+	}
+}
+
+func BenchmarkBuffer100(b *testing.B) {
+	var data [100]byte
+	for i := 0; i < b.N; i++ {
+		b := bytes.NewBuffer(data[:])
+		for {
+			if _, err := b.ReadByte(); err != nil {
+				break
+			}
+		}
+	}
+}
+
+func BenchmarkByteSlice10(b *testing.B) {
+	var data [10]byte
+	for i := 0; i < b.N; i++ {
+		b := ByteSlice(data[:])
+		for {
+			if _, err := b.ReadByte(); err != nil {
+				break
+			}
+		}
+	}
+}
+
+func BenchmarkBuffer10(b *testing.B) {
+	var data [10]byte
+	for i := 0; i < b.N; i++ {
+		b := bytes.NewBuffer(data[:])
+		for {
+			if _, err := b.ReadByte(); err != nil {
+				break
+			}
+		}
+	}
+}
