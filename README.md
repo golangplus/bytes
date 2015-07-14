@@ -8,8 +8,7 @@ Plus to the standard `bytes` package.
 // io.ByteWriter, io.Closer, io.ReaderFrom, io.WriterTo and io.RuneReader
 // interfaces.
 //
-// When reading from a constant small byte slice and no need for seeking, *ByteSlice is a
-// better alternative then bytes.Buffer, since it needs less extra resource.
+// Benchmark shows *ByteSlice is a better alternative for bytes.Buffer for writings and consumes less resource.
 type ByteSlice []byte
 ```
 

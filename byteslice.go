@@ -16,12 +16,7 @@ import (
 // io.ByteWriter, io.Closer, io.ReaderFrom, io.WriterTo and io.RuneReader
 // interfaces.
 //
-// When reading from a constant small byte slice and no need for seeking, *ByteSlice is a
-// better alternative then bytes.Buffer, since it needs less extra resource.
-// Benchmark shows when reading from a slice of 10 bytes, the total performance is about 5
-// times bettern than bytes.Buffer (70 ns/op vs 400 ns/op). For a slice of 100 bytes,
-// there are still obvious improvement (700 ns/op vs 1000 ns/op). See and run benchmark for
-// more details.
+// Benchmark shows *ByteSlice is a better alternative for bytes.Buffer for writings and consumes less resource.
 type ByteSlice []byte
 
 var (
@@ -41,7 +36,7 @@ func NewPByteSlice(bytes []byte) *ByteSlice {
 	return (*ByteSlice)(&bytes)
 }
 
-// Read implements io.Reader interface.
+// Read implements the io.Reader interface.
 // After some bytes are read, the slice shrinks.
 func (s *ByteSlice) Read(p []byte) (n int, err error) {
 	if len(p) == 0 {
@@ -80,14 +75,14 @@ func (s *ByteSlice) Skip(n int64) (int64, error) {
 	return n, nil
 }
 
-// Write implements io.Writer interface.
+// Write implements the io.Writer interface.
 // Bytes are appended to the tail of the slice.
 func (s *ByteSlice) Write(p []byte) (n int, err error) {
 	*s = append(*s, p...)
 	return len(p), nil
 }
 
-// ReadByte implements io.ByteReader interface.
+// ReadByte implements the io.ByteReader interface.
 func (s *ByteSlice) ReadByte() (c byte, err error) {
 	if len(*s) < 1 {
 		return 0, io.EOF
@@ -102,19 +97,19 @@ func (s *ByteSlice) ReadByte() (c byte, err error) {
 	return c, nil
 }
 
-// WriteByte implements io.ByteWriter interface.
+// WriteByte implements the io.ByteWriter interface.
 func (s *ByteSlice) WriteByte(c byte) error {
 	*s = append(*s, c)
 	return nil
 }
 
-// Close implements io.Closer interface.
+// Close implements the io.Closer interface.
 // It does nothing.
 func (s ByteSlice) Close() error {
 	return nil
 }
 
-// ReadFrom implements io.ReaderFrom interface.
+// ReadFrom implements the io.ReaderFrom interface.
 func (s *ByteSlice) ReadFrom(r io.Reader) (n int64, err error) {
 	const buf_SIZE = 32 * 1024
 	buf := make([]byte, buf_SIZE)
@@ -140,13 +135,13 @@ func (s *ByteSlice) ReadFrom(r io.Reader) (n int64, err error) {
 	return n, err
 }
 
-// WriteTo implements io.WriterTo interface.
+// WriteTo implements the io.WriterTo interface.
 func (s ByteSlice) WriteTo(w io.Writer) (n int64, err error) {
 	nWrite, err := w.Write(s)
 	return int64(nWrite), err
 }
 
-// ReadRune implements io.RuneReader interface.
+// ReadRune implements the io.RuneReader interface.
 func (s *ByteSlice) ReadRune() (r rune, size int, err error) {
 	if !utf8.FullRune(*s) {
 		return utf8.RuneError, 0, io.ErrUnexpectedEOF

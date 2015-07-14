@@ -139,8 +139,8 @@ func TestByteSlice_WriteItoa(t *testing.T) {
 	assert.Equal(t, "s", string(s), "1234ff")
 }
 
-func BenchmarkByteSlice100(b *testing.B) {
-	var data [100]byte
+func BenchmarkByteSliceRead1k(b *testing.B) {
+	var data [1000]byte
 	for i := 0; i < b.N; i++ {
 		b := ByteSlice(data[:])
 		for {
@@ -151,8 +151,8 @@ func BenchmarkByteSlice100(b *testing.B) {
 	}
 }
 
-func BenchmarkBuffer100(b *testing.B) {
-	var data [100]byte
+func BenchmarkBytesBufferRead1k(b *testing.B) {
+	var data [1000]byte
 	for i := 0; i < b.N; i++ {
 		b := bytes.NewBuffer(data[:])
 		for {
@@ -163,7 +163,19 @@ func BenchmarkBuffer100(b *testing.B) {
 	}
 }
 
-func BenchmarkByteSlice10(b *testing.B) {
+func BenchmarkBytesReader1k(b *testing.B) {
+	var data [1000]byte
+	for i := 0; i < b.N; i++ {
+		b := bytes.NewReader(data[:])
+		for {
+			if _, err := b.ReadByte(); err != nil {
+				break
+			}
+		}
+	}
+}
+
+func BenchmarkByteSliceRead10(b *testing.B) {
 	var data [10]byte
 	for i := 0; i < b.N; i++ {
 		b := ByteSlice(data[:])
@@ -175,7 +187,7 @@ func BenchmarkByteSlice10(b *testing.B) {
 	}
 }
 
-func BenchmarkBuffer10(b *testing.B) {
+func BenchmarkBytesBufferRead10(b *testing.B) {
 	var data [10]byte
 	for i := 0; i < b.N; i++ {
 		b := bytes.NewBuffer(data[:])
@@ -183,6 +195,71 @@ func BenchmarkBuffer10(b *testing.B) {
 			if _, err := b.ReadByte(); err != nil {
 				break
 			}
+		}
+	}
+}
+
+func BenchmarkReader10(b *testing.B) {
+	var data [10]byte
+	for i := 0; i < b.N; i++ {
+		r := bytes.NewReader(data[:])
+		for {
+			if _, err := r.ReadByte(); err != nil {
+				if err != io.EOF {
+					b.Fatalf("r.ReadByte failed: %v", err)
+				}
+				break
+			}
+		}
+	}
+}
+
+func BenchmarkByteSliceWrite10(b *testing.B) {
+	var data [10]byte
+	for i := 0; i < b.N; i++ {
+		b := ByteSlice(data[:0])
+		for range data {
+			b.WriteByte(0)
+		}
+	}
+}
+
+func BenchmarkBytesBufferWrite10_New(b *testing.B) {
+	var data [10]byte
+	for i := 0; i < b.N; i++ {
+		b := bytes.NewBuffer(data[:0])
+		for range data {
+			b.WriteByte(0)
+		}
+	}
+}
+
+func BenchmarkBytesBufferWrite10_Def(b *testing.B) {
+	var data [10]byte
+	for i := 0; i < b.N; i++ {
+		var b bytes.Buffer
+		for range data {
+			b.WriteByte(0)
+		}
+	}
+}
+
+func BenchmarkByteSliceWrite1k(b *testing.B) {
+	var data [1000]byte
+	for i := 0; i < b.N; i++ {
+		b := ByteSlice(data[:0])
+		for range data {
+			b.WriteByte(0)
+		}
+	}
+}
+
+func BenchmarkBytesBufferWrite1k(b *testing.B) {
+	var data [1000]byte
+	for i := 0; i < b.N; i++ {
+		b := bytes.NewBuffer(data[:0])
+		for range data {
+			b.WriteByte(0)
 		}
 	}
 }
