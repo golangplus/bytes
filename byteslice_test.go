@@ -73,7 +73,7 @@ func TestByteSlice(t *testing.T) {
 
 	bs.Close()
 
-	bs = nil
+	bs.Reset()
 	fmt.Fprint(&bs, "ABC")
 	assert.StringEqual(t, "bs", bs, "[65 66 67]")
 

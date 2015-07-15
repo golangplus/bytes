@@ -57,6 +57,11 @@ func (s *ByteSlice) Read(p []byte) (n int, err error) {
 	return n, nil
 }
 
+// Reset sets the length of the slice to 0.
+func (s *ByteSlice) Reset() {
+	*s = (*s)[:0]
+}
+
 // Skip skips n bytes.
 func (s *ByteSlice) Skip(n int64) (int64, error) {
 	if n == 0 {
