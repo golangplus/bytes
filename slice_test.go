@@ -15,8 +15,20 @@ import (
 	"github.com/golangplus/testing/assert"
 )
 
-func TestByteSlice(t *testing.T) {
-	var bs ByteSlice
+func ExampleSlice() {
+	var b Slice
+	b.WriteByte(65)
+	b.WriteString("bc")
+
+	fmt.Println(b)
+	fmt.Println(string(b))
+	// OUTPUT:
+	// [65 98 99]
+	// Abc
+}
+
+func TestSlice(t *testing.T) {
+	var bs Slice
 	assert.Equal(t, "len(bs)", len(bs), 0)
 	assert.StringEqual(t, "bs", bs, "[]")
 
@@ -74,7 +86,7 @@ func TestByteSlice(t *testing.T) {
 	assert.Equal(t, "bs == data", bytes.Equal(bs, data), true)
 
 	bs = nil
-	n, err = ByteSlice(data).WriteTo(&bs)
+	n, err = Slice(data).WriteTo(&bs)
 	assert.Equal(t, "err", err, nil)
 	assert.Equal(t, "n", n, int64(len(data)))
 	assert.Equal(t, "bs == data", bytes.Equal(bs, data), true)
@@ -94,16 +106,16 @@ func TestByteSlice(t *testing.T) {
 	assert.Equal(t, "r", r, '文')
 }
 
-func TestByteSlice_Bug_Read(t *testing.T) {
-	var s ByteSlice
+func TestSlice_Bug_Read(t *testing.T) {
+	var s Slice
 	n, err := s.Read(make([]byte, 1))
 	t.Logf("n: %d, err: %v", n, err)
 	assert.Equal(t, "n", 0, 0)
 	assert.Equal(t, "err", err, io.EOF)
 }
 
-func TestByteSlice_Bug_ReadRune(t *testing.T) {
-	s := ByteSlice{65, 0xff, 66}
+func TestSlice_Bug_ReadRune(t *testing.T) {
+	s := Slice{65, 0xff, 66}
 	r, sz, err := s.ReadRune()
 	assert.Equal(t, "r", r, 'A')
 	assert.Equal(t, "sz", sz, 1)
@@ -119,10 +131,135 @@ func TestByteSlice_Bug_ReadRune(t *testing.T) {
 	assert.Equal(t, "err", err, nil)
 }
 
-func TestByteSlice_WriteItoa(t *testing.T) {
-	var s ByteSlice
+func TestSlice_WriteItoa(t *testing.T) {
+	var s Slice
 	s.WriteItoa(1234, 10)
 	s.WriteItoa(255, 16)
 
 	assert.Equal(t, "s", string(s), "1234ff")
+}
+
+func BenchmarkSliceRead1k(b *testing.B) {
+	var data [1000]byte
+	for i := 0; i < b.N; i++ {
+		b := Slice(data[:])
+		for {
+			if _, err := b.ReadByte(); err != nil {
+				break
+			}
+		}
+	}
+}
+
+func BenchmarkBytesBufferRead1k(b *testing.B) {
+	var data [1000]byte
+	for i := 0; i < b.N; i++ {
+		b := bytes.NewBuffer(data[:])
+		for {
+			if _, err := b.ReadByte(); err != nil {
+				break
+			}
+		}
+	}
+}
+
+func BenchmarkBytesReader1k(b *testing.B) {
+	var data [1000]byte
+	for i := 0; i < b.N; i++ {
+		b := bytes.NewReader(data[:])
+		for {
+			if _, err := b.ReadByte(); err != nil {
+				break
+			}
+		}
+	}
+}
+
+func BenchmarkSliceRead10(b *testing.B) {
+	var data [10]byte
+	for i := 0; i < b.N; i++ {
+		b := Slice(data[:])
+		for {
+			if _, err := b.ReadByte(); err != nil {
+				break
+			}
+		}
+	}
+}
+
+func BenchmarkBytesBufferRead10(b *testing.B) {
+	var data [10]byte
+	for i := 0; i < b.N; i++ {
+		b := bytes.NewBuffer(data[:])
+		for {
+			if _, err := b.ReadByte(); err != nil {
+				break
+			}
+		}
+	}
+}
+
+func BenchmarkReader10(b *testing.B) {
+	var data [10]byte
+	for i := 0; i < b.N; i++ {
+		r := bytes.NewReader(data[:])
+		for {
+			if _, err := r.ReadByte(); err != nil {
+				if err != io.EOF {
+					b.Fatalf("r.ReadByte failed: %v", err)
+				}
+				break
+			}
+		}
+	}
+}
+
+func BenchmarkSliceWrite10(b *testing.B) {
+	var data [10]byte
+	for i := 0; i < b.N; i++ {
+		b := Slice(data[:0])
+		for range data {
+			b.WriteByte(0)
+		}
+	}
+}
+
+func BenchmarkBytesBufferWrite10_New(b *testing.B) {
+	var data [10]byte
+	for i := 0; i < b.N; i++ {
+		b := bytes.NewBuffer(data[:0])
+		for range data {
+			b.WriteByte(0)
+		}
+	}
+}
+
+func BenchmarkBytesBufferWrite10_Def(b *testing.B) {
+	var data [10]byte
+	for i := 0; i < b.N; i++ {
+		var b bytes.Buffer
+		for range data {
+			b.WriteByte(0)
+		}
+	}
+}
+
+func BenchmarkSliceWrite1k(b *testing.B) {
+	var data [1000]byte
+	for i := 0; i < b.N; i++ {
+		b := Slice(data[:0])
+		for range data {
+			b.WriteByte(0)
+		}
+	}
+}
+
+func BenchmarkBytesBufferWrite1k(b *testing.B) {
+	var data [1000]byte
+	for i := 0; i < b.N; i++ {
+		b := bytes.NewBuffer(data[:0])
+		for range data {
+			b.WriteByte(0)
+		}
+	}
 }
