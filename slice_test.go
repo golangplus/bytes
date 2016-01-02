@@ -32,9 +32,39 @@ func TestSlice(t *testing.T) {
 	assert.Equal(t, "len(bs)", len(bs), 0)
 	assert.StringEqual(t, "bs", bs, "[]")
 
+	n, err := bs.Skip(1)
+	assert.Equal(t, "err", err, io.EOF)
+	assert.Equal(t, "n", n, int64(0))
+
+	c, err := bs.ReadByte()
+	assert.Equal(t, "err", err, io.EOF)
+
+	bs.Write([]byte{1})
+	c, err = bs.ReadByte()
+	assert.NoError(t, err)
+	assert.Equal(t, "c", c, byte(1))
+	assert.Equal(t, "len(bs)", len(bs), 0)
+
+	bs.Write([]byte{1, 2, 3})
+	n, err = bs.Skip(4)
+	assert.NoError(t, err)
+	assert.Equal(t, "n", n, int64(3))
+
 	bs.Write([]byte{1, 2, 3})
 	assert.Equal(t, "len(bs)", len(bs), 3)
 	assert.StringEqual(t, "bs", bs, "[1 2 3]")
+
+	cnt, err := bs.Read(nil)
+	assert.NoError(t, err)
+	assert.Equal(t, "cnt", cnt, 0)
+	assert.Equal(t, "len(bs)", len(bs), 3)
+	assert.Equal(t, "bs", bs, Slice([]byte{1, 2, 3}))
+
+	n, err = bs.Skip(0)
+	assert.NoError(t, err)
+	assert.Equal(t, "n", n, int64(0))
+	assert.Equal(t, "len(bs)", len(bs), 3)
+	assert.Equal(t, "bs", bs, Slice([]byte{1, 2, 3}))
 
 	p := make([]byte, 2)
 	bs.Read(p)
@@ -52,9 +82,9 @@ func TestSlice(t *testing.T) {
 
 	bs.WriteByte(6)
 
-	c, err := bs.ReadByte()
+	c, err = bs.ReadByte()
+	assert.NoError(t, err)
 	assert.Equal(t, "c", c, byte(4))
-	assert.Equal(t, "err", err, nil)
 	assert.StringEqual(t, "bs", bs, "[5 6]")
 
 	bs.WriteRune('A')
@@ -80,28 +110,28 @@ func TestSlice(t *testing.T) {
 	data := make([]byte, 35*1024)
 	io.ReadFull(rand.Reader, data)
 	bs = nil
-	n, err := bs.ReadFrom(bytes.NewReader(data))
-	assert.Equal(t, "err", err, nil)
+	n, err = bs.ReadFrom(bytes.NewReader(data))
+	assert.NoError(t, err)
 	assert.Equal(t, "n", n, int64(len(data)))
 	assert.Equal(t, "bs == data", bytes.Equal(bs, data), true)
 
 	bs = nil
 	n, err = Slice(data).WriteTo(&bs)
-	assert.Equal(t, "err", err, nil)
+	assert.NoError(t, err)
 	assert.Equal(t, "n", n, int64(len(data)))
 	assert.Equal(t, "bs == data", bytes.Equal(bs, data), true)
 
 	bs = []byte("A中文")
 	r, size, err := bs.ReadRune()
-	assert.Equal(t, "err", err, nil)
+	assert.NoError(t, err)
 	assert.Equal(t, "size", size, 1)
 	assert.Equal(t, "r", r, 'A')
 	r, size, err = bs.ReadRune()
-	assert.Equal(t, "err", err, nil)
+	assert.NoError(t, err)
 	assert.Equal(t, "size", size, len([]byte("中")))
 	assert.Equal(t, "r", r, '中')
 	r, size, err = bs.ReadRune()
-	assert.Equal(t, "err", err, nil)
+	assert.NoError(t, err)
 	assert.Equal(t, "size", size, len([]byte("文")))
 	assert.Equal(t, "r", r, '文')
 }
@@ -137,6 +167,23 @@ func TestSlice_WriteItoa(t *testing.T) {
 	s.WriteItoa(255, 16)
 
 	assert.Equal(t, "s", string(s), "1234ff")
+}
+
+func TestSLice_NewPSlice(t *testing.T) {
+	s := NewPSlice([]byte{1, 2, 3})
+	assert.Equal(t, "*s", []byte(*s), []byte{1, 2, 3})
+}
+
+func TestSlice_ReadRune_UnfullRune(t *testing.T) {
+	var s Slice = []byte("\xF0\xA4\xAD")
+	_, _, err := s.ReadRune()
+	assert.Equal(t, "err", err, io.ErrUnexpectedEOF)
+}
+
+func TestSlice_WriteRune_InvalidRune(t *testing.T) {
+	var s Slice
+	_, err := s.WriteRune(utf8.MaxRune + 1)
+	assert.Equal(t, "err", err, ErrInvalidRune)
 }
 
 func BenchmarkSliceRead1k(b *testing.B) {
