@@ -1,4 +1,4 @@
-# bytes
+# bytes [![GoSearch](http://go-search.org/badge?id=github.com%2Fgolangplus%2Fbytes)](http://go-search.org/view?id=github.com%2Fgolangplus%2Fbytes)
 Plus to the standard `bytes` package.
 
 ## Featured
