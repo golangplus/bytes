@@ -144,6 +144,111 @@ func TestSlice_Bug_Read(t *testing.T) {
 	assert.Equal(t, "err", err, io.EOF)
 }
 
+type readerReturningEOFLastRead int
+
+func (r *readerReturningEOFLastRead) Read(p []byte) (n int, err error) {
+	if len(p) == 0 {
+		return 0, nil
+	}
+	n = int(*r)
+	if len(p) < n {
+		n = len(p)
+	}
+	for i := 0; i < n; i++ {
+		p[i] = 1
+	}
+	*r -= readerReturningEOFLastRead(n)
+	if *r == 0 {
+		return n, io.EOF
+	}
+	return n, nil
+}
+
+func TestSlice_ReadFrom(t *testing.T) {
+	src := make([]byte, 63*1024)
+	for i := range src {
+		src[i] = byte(i)
+	}
+	b := bytes.NewBuffer(src)
+	var s Slice
+	n, err := s.ReadFrom(b)
+	assert.Equal(t, "n", n, int64(len(src)))
+	assert.NoError(t, err)
+	assert.Equal(t, "s", s, Slice(src))
+}
+
+type readerReturningEOFAfterLastRead int
+
+func (r *readerReturningEOFAfterLastRead) Read(p []byte) (n int, err error) {
+	if len(p) == 0 {
+		return 0, nil
+	}
+	n = int(*r)
+	if len(p) < n {
+		n = len(p)
+	}
+	for i := 0; i < n; i++ {
+		p[i] = 2
+	}
+	*r -= readerReturningEOFAfterLastRead(n)
+	if n == 0 {
+		return n, io.EOF
+	}
+	return n, nil
+}
+
+func TestSlice_ReadFromEOF(t *testing.T) {
+	r1 := readerReturningEOFLastRead(1)
+	var s Slice
+	n, err := s.ReadFrom(&r1)
+	assert.Equal(t, "n", n, int64(1))
+	assert.NoError(t, err)
+	assert.Equal(t, "s", s, Slice([]byte{1}))
+
+	r2 := readerReturningEOFAfterLastRead(1)
+	s = nil
+	n, err = s.ReadFrom(&r2)
+	assert.Equal(t, "n", n, int64(1))
+	assert.NoError(t, err)
+	assert.Equal(t, "s", s, Slice([]byte{2}))
+}
+
+type readerErrUnexpectedEOF int
+
+func (r *readerErrUnexpectedEOF) Read(p []byte) (n int, err error) {
+	if len(p) == 0 {
+		return 0, nil
+	}
+	n = int(*r)
+	if len(p) < n {
+		n = len(p)
+	}
+	for i := 0; i < n; i++ {
+		p[i] = 3
+	}
+	*r -= readerErrUnexpectedEOF(n)
+	if *r == 0 {
+		return n, io.ErrUnexpectedEOF
+	}
+	return n, nil
+}
+
+func TestSlice_ReadFromFailed(t *testing.T) {
+	r0 := readerErrUnexpectedEOF(0)
+	var s Slice
+	n, err := s.ReadFrom(&r0)
+	assert.Equal(t, "n", n, int64(0))
+	assert.Equal(t, "err", err, io.ErrUnexpectedEOF)
+	assert.Equal(t, "s", s, Slice(nil))
+
+	r1 := readerErrUnexpectedEOF(1)
+	s = nil
+	n, err = s.ReadFrom(&r1)
+	assert.Equal(t, "n", n, int64(1))
+	assert.Equal(t, "err", err, io.ErrUnexpectedEOF)
+	assert.Equal(t, "s", s, Slice([]byte{3}))
+}
+
 func TestSlice_Bug_ReadRune(t *testing.T) {
 	s := Slice{65, 0xff, 66}
 	r, sz, err := s.ReadRune()

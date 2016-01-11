@@ -121,23 +121,23 @@ func (s *Slice) ReadFrom(r io.Reader) (n int64, err error) {
 	for {
 		nRead, err := r.Read(buf)
 		if nRead == 0 {
-			if err == io.EOF {
-				return n, nil
+			if err != io.EOF {
+				return n, err
 			}
 			break
 		}
 		n += int64(nRead)
 		*s = append(*s, buf[:nRead]...)
 		if err == io.EOF {
-			return n, nil
+			break
 		}
 
 		if err != nil {
-			break
+			return n, err
 		}
 	}
 
-	return n, err
+	return n, nil
 }
 
 // WriteTo implements the io.WriterTo interface.
